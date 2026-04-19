@@ -1,0 +1,8 @@
+.git
+venv
+__pycache__
+*.pyc
+UPLOAD_FOLDER
+Screenshots
+.dockerignore
+Dockerfile

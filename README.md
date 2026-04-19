@@ -13,7 +13,16 @@ A gender detection and age prediction web application developed using Flask, Ope
 * The backend is built using Flask and Open CV
 
 ### My Teammates
-[![anchitya-shield]][anchitya] [![rhys-shield]][rhys] [![shaadman-shield]][shaadman]
+We are proud to introduce the dedicated individuals behind this project:
+
+| Name | Student ID |
+| :--- | :--- |
+| **Omkar Londhe** | 202301040027 |
+| **Yashraj Jagtap** | 202301040092 |
+| **Ishwari Mahajan** | 202301040173 |
+| **Om Thorat** | 202301040155 |
+| **Sumit Khetre** | 202402040017 |
+| **Sneha Nannaware** | 202301040267 |
 
 ### My Contribution
 Built the backend solution of the application. Integrated the OpenCV code as well as frontend developed by my fellow teammates with the flask backend.
@@ -54,8 +63,6 @@ Contributions are what make the open source community such an amazing place to b
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## Contact
-[![instagram-shield]][instagram]  [![linkedin-shield]][linkedin]
 
 
 <!-- Links -->
