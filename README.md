@@ -21,8 +21,9 @@ We are proud to introduce the dedicated individuals behind this project:
 | **Yashraj Jagtap** | 202301040092 |
 | **Ishwari Mahajan** | 202301040173 |
 | **Om Thorat** | 202301040155 |
-| **Sumit Khetre** | 202402040017 |
 | **Sneha Nannaware** | 202301040267 |
+| **Sumit Khetre** | 202402040017 |
+
 
 ### My Contribution
 Built the backend solution of the application. Integrated the OpenCV code as well as frontend developed by my fellow teammates with the flask backend.
