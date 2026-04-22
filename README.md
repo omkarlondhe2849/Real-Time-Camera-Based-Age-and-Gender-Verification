@@ -17,9 +17,9 @@ We are proud to introduce the dedicated individuals behind this project:
 
 | Name | Student ID |
 | :--- | :--- |
-| **Omkar Londhe** | 202301040027 |
-| **Yashraj Jagtap** | 202301040092 |
 | **Ishwari Mahajan** | 202301040173 |
+| **Yashraj Jagtap** | 202301040092 |
+| **Omkar Londhe** | 202301040027 |
 | **Om Thorat** | 202301040155 |
 | **Sneha Nannaware** | 202301040267 |
 | **Sumit Khetre** | 202402040017 |
