@@ -34,15 +34,36 @@ Built the backend solution of the application. Integrated the OpenCV code as wel
 Make sure you have Python, OpenCV, Flask and PIL installed on your system to run this project.
 
 ### Execution guide
-1. Download the contents of the repository
-2. Make sure the necessary prerequisites are installed on your system
-3. Type the following command inside the directory on your terminal
-  ```sh
-  python app.py
-  ```
-4. Go to your browser and go to http://127.0.0.1:5000/
 
-## Usage
+**Option 1: Run Without Docker (Local Environment)**
+1. Download the contents of the repository
+2. Make sure the necessary prerequisites are installed on your system (`pip install -r requirements.txt`)
+3. Type the following command inside the directory on your terminal:
+   ```sh
+   python app.py
+   ```
+4. Go to your browser and open http://127.0.0.1:5000/
+
+**Option 2: Run With Docker (Containerized)**
+1. Ensure Docker Desktop is installed and running on your system.
+2. Build and run the docker container with the following commands:
+   ```sh
+   docker build -t age-gender-app .
+   docker run -p 5000:5000 age-gender-app
+   ```
+3. Alternatively, you can pull the pre-built image directly from Docker Hub:
+   ```sh
+   docker pull whiterider/age-gender-verification:tagname
+   docker run -p 5000:5000 whiterider/age-gender-verification:tagname
+   ```
+4. Go to your browser and open http://127.0.0.1:5000/
+
+**Option 3: Run Automated Tests**
+To run the automated Selenium and Pytest test suite for risk and threat assessment:
+```sh
+# Ensure the app is already running (either via Option 1 or Option 2 above), then run:
+python -m pytest
+```
 ### The website
 
 ![1]

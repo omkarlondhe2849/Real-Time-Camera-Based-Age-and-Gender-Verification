@@ -9,7 +9,9 @@ import cv2
 import numpy as np
 import math
 import argparse
-from flask import Flask, render_template, Response, request
+import base64
+import json
+from flask import Flask, render_template, Response, request, jsonify
 from PIL import Image
 import io
 
@@ -55,7 +57,7 @@ parser = argparse.ArgumentParser()
 # If the input argument is not given it will skip this and open webcam for detection
 parser.add_argument('--image')
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 '''
 Each model comes with two files: weight file and model file
@@ -90,11 +92,10 @@ def gen_frames():
 # Open a video file or an image file or a camera stream
     video = cv2.VideoCapture(0)
     padding = 20
-    while cv2.waitKey(1) < 0:
+    while True:
         # Read frame
         hasFrame, frame = video.read()
         if not hasFrame:
-            cv2.waitKey()
             break
 
     # It will detect the no. of faces in the frame
@@ -128,9 +129,7 @@ def gen_frames():
                 faceBox[0], faceBox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
         #cv2.imshow("Detecting age and gender", resultImg)
 
-            if resultImg is None:
-                continue
-
+        if resultImg is not None:
             ret, encodedImg = cv2.imencode('.jpg', resultImg)
             #resultImg = buffer.tobytes()
             yield (b'--frame\r\n'
@@ -164,51 +163,43 @@ def gen_frames_photo(img_file):
     #ret, frame = cv2.imencode('.jpg', img_file)
     #video = cv2.VideoCapture(img_file)
     padding = 20
-    while cv2.waitKey(1) < 0:
-        # Read frame
-        #hasFrame, frame = video.read()
-        # if not hasFrame:
-        # cv2.waitKey()
-        # break
 
-        # It will detect the no. of faces in the frame
-        resultImg, faceBoxes = highlightFace(faceNet, frame)
-        if not faceBoxes:   # If no faces are detected
-            print("No face detected")   # Then it will print this message
+    # It will detect the no. of faces in the frame
+    resultImg, faceBoxes = highlightFace(faceNet, frame)
+    if not faceBoxes:   # If no faces are detected
+        print("No face detected")   # Then it will print this message
 
-        for faceBox in faceBoxes:
-            # print facebox
-            face = frame[max(0, faceBox[1]-padding):   # Face info is stored in this variable
-                         min(faceBox[3]+padding, frame.shape[0]-1), max(0, faceBox[0]-padding):min(faceBox[2]+padding, frame.shape[1]-1)]
+    for faceBox in faceBoxes:
+        # print facebox
+        face = frame[max(0, faceBox[1]-padding):   # Face info is stored in this variable
+                     min(faceBox[3]+padding, frame.shape[0]-1), max(0, faceBox[0]-padding):min(faceBox[2]+padding, frame.shape[1]-1)]
 
-        # The dnn.blobFromImage takes care of pre-processing
-        # which includes setting the blob  dimensions and normalization.
-            blob = cv2.dnn.blobFromImage(
-                face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
-            genderNet.setInput(blob)
-        # genderNet.forward method will detect the gender of each face detected
-            genderPreds = genderNet.forward()
-            gender = genderList[genderPreds[0].argmax()]
-            print(f'Gender: {gender}')  # print the gender in the console
+    # The dnn.blobFromImage takes care of pre-processing
+    # which includes setting the blob  dimensions and normalization.
+        blob = cv2.dnn.blobFromImage(
+            face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+        genderNet.setInput(blob)
+    # genderNet.forward method will detect the gender of each face detected
+        genderPreds = genderNet.forward()
+        gender = genderList[genderPreds[0].argmax()]
+        print(f'Gender: {gender}')  # print the gender in the console
 
-            ageNet.setInput(blob)
-        # ageNet.forward method will detect the age of the face detected
-            agePreds = ageNet.forward()
-            age = ageList[agePreds[0].argmax()]
-            print(f'Age: {age[1:-1]} years')    # print the age in the console
+        ageNet.setInput(blob)
+    # ageNet.forward method will detect the age of the face detected
+        agePreds = ageNet.forward()
+        age = ageList[agePreds[0].argmax()]
+        print(f'Age: {age[1:-1]} years')    # print the age in the console
 
-        # Show the output frame
-            cv2.putText(resultImg, f'{gender}, {age}', (
-                faceBox[0], faceBox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
-        #cv2.imshow("Detecting age and gender", resultImg)
+    # Show the output frame
+        cv2.putText(resultImg, f'{gender}, {age}', (
+            faceBox[0], faceBox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 255), 1, cv2.LINE_AA)
+    #cv2.imshow("Detecting age and gender", resultImg)
 
-            if resultImg is None:
-                continue
-
-            ret, encodedImg = cv2.imencode('.jpg', resultImg)
-            #resultImg = buffer.tobytes()
-            return (b'--frame\r\n'
-                    b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encodedImg) + b'\r\n')
+    if resultImg is not None:
+        ret, encodedImg = cv2.imencode('.jpg', resultImg)
+        #resultImg = buffer.tobytes()
+        return (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encodedImg) + b'\r\n')
 
 
 @app.route('/')
@@ -234,6 +225,62 @@ def upload_file():
         print(img_ip)
         return Response(gen_frames_photo(img_ip), mimetype='multipart/x-mixed-replace; boundary=frame')
         # return 'file uploaded successfully'
+
+@app.route('/process_frame', methods=['POST'])
+def process_frame():
+    """Receive a base64 JPEG frame from the browser, run age/gender detection, return annotated JPEG."""
+    data = request.get_json()
+    if not data or 'image' not in data:
+        return jsonify({'error': 'No image provided'}), 400
+
+    # Decode base64 image (data URL: "data:image/jpeg;base64,<data>")
+    header, encoded = data['image'].split(',', 1)
+    img_bytes = base64.b64decode(encoded)
+    img_array = np.frombuffer(img_bytes, dtype=np.uint8)
+    frame = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+
+    if frame is None:
+        return jsonify({'error': 'Failed to decode image'}), 400
+
+    faceProto  = "opencv_face_detector.pbtxt"
+    faceModel  = "opencv_face_detector_uint8.pb"
+    ageProto   = "age_deploy.prototxt"
+    ageModel   = "age_net.caffemodel"
+    genderProto = "gender_deploy.prototxt"
+    genderModel = "gender_net.caffemodel"
+
+    MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
+    ageList    = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
+    genderList = ['Male', 'Female']
+
+    faceNet   = cv2.dnn.readNet(faceModel, faceProto)
+    ageNet    = cv2.dnn.readNet(ageModel, ageProto)
+    genderNet = cv2.dnn.readNet(genderModel, genderProto)
+
+    resultImg, faceBoxes = highlightFace(faceNet, frame)
+    padding = 20
+
+    for faceBox in faceBoxes:
+        face = frame[
+            max(0, faceBox[1]-padding): min(faceBox[3]+padding, frame.shape[0]-1),
+            max(0, faceBox[0]-padding): min(faceBox[2]+padding, frame.shape[1]-1)
+        ]
+        blob = cv2.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+
+        genderNet.setInput(blob)
+        gender = genderList[genderNet.forward()[0].argmax()]
+
+        ageNet.setInput(blob)
+        age = ageList[ageNet.forward()[0].argmax()]
+
+        label = f'{gender}, {age}'
+        cv2.putText(resultImg, label,
+                    (faceBox[0], faceBox[1]-10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+
+    ret, buf = cv2.imencode('.jpg', resultImg)
+    return Response(buf.tobytes(), mimetype='image/jpeg')
+
 
 if __name__ == '__main__':
     app.run(debug=True)
