@@ -37,7 +37,7 @@ Make sure you have Python, OpenCV, Flask and PIL installed on your system to run
 
 **Option 1: Run Without Docker (Local Environment)**
 1. Download the contents of the repository
-2. Make sure the necessary prerequisites are installed on your system (`pip install -r requirements.txt`)
+2. Make sure the necessary prerequisites are installed on your system (`python -m pip install -r requirements.txt`)
 3. Type the following command inside the directory on your terminal:
    ```sh
    python app.py
